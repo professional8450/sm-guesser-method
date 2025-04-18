@@ -12,6 +12,8 @@ class Artist(object):
         self.country: str = kwargs['country']
         self.gender: Gender = Gender(kwargs['gender'].title())
         self.ranks = None
+        self.score: float = 0
+        self.alt: float = 0
         if kwargs.get('rank_2'):
             self.ranks = (
                 int(kwargs['rank_2']),
@@ -25,3 +27,9 @@ class Artist(object):
 
     def __repr__(self):
         return self.__str__()
+
+    def set_score(self, score: float):
+        self.score = score
+
+    def set_alt(self, score: float):
+        self.alt = score

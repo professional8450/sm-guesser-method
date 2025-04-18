@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name='soundmapsolver',
     packages=find_packages(),
-    version='1.0.6',
+    version='1.1',
     description='A solver for Soundmap Artist Guesser',
     author='cestovatel',
     install_requires=[  

@@ -8,6 +8,7 @@ class Rule(ABC):
     def __init__(self, *, attribute: str, check: Callable[[Artist], bool]):
         self.attribute: str = attribute
         self.check: Callable[[Artist], bool] = check
+        self._original_value = None
 
     def __call__(self, artist: Artist) -> bool:
         return self.check(artist)

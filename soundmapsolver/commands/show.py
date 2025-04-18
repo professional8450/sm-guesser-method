@@ -4,7 +4,7 @@ from ..artist import Artist
 
 def callback(command: Command, artist: Artist):
     print()
-    command.solver._print_artists(artists=[artist], title=f"{artist.name}'s statistics")
+    command.solver._print_artists(artists=[artist], title=f"{artist.name}'s statistics", copy=False)
     command.solver._print_odds_panel(artist=artist)
 
 

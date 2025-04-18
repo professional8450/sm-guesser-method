@@ -43,4 +43,19 @@ PRINT_COLOR_MAPPING = {
         Gender.female: 'magenta',
         Gender.mixed: 'white',
     },
+    "score": {
+        '2': 'green',
+        '2-3': 'orange',
+        '3': 'yellow',
+        '5': 'red'
+    }
 }
+
+hint_const = ('**:mag_right: I recommend using a hint!**\n'
+              'Artist guesser has recently been updated to include a `Hint` button. Using the [button](https://cdn.discordapp.com/attachments/1324518793539616842/1362539741710385162/image.png)'
+              ' will reveal a key piece of information about the artist.')
+
+hint_alt_const = ('**:mag_right: I recommend using a hint!**\n'
+              'Artist guesser has recently been updated to include a `Hint` button. Using the [button](https://cdn.discordapp.com/attachments/1324518793539616842/1362539741710385162/image.png)'
+              ' will reveal a key piece of information about the artist.\n\nIdeally, use the hint **before** guessing anyone at all, '
+              'as the hints can sometimes reduce the artists to just 4-5 options!')
