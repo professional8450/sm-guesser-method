@@ -3,13 +3,14 @@ from setuptools import find_packages, setup
 setup(
     name='soundmapsolver',
     packages=find_packages(),
-    version='1.2.1',
+    version='1.2.2',
     description='A solver for Soundmap Artist Guesser',
     author='cestovatel',
     install_requires=[  
         'rich',
         'pyperclip',
-        'pygame'
+        'pygame',
+        'requests'
     ],
     python_requires='>=3.13', 
 )
