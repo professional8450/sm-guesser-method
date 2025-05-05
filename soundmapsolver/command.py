@@ -7,13 +7,14 @@ if TYPE_CHECKING:
 
 
 class Command(object):
-    def __init__(self, *, name: str, description: str, usage: str, callback: Callable, alias: List[str] = None):
+    def __init__(self, *, name: str, description: str, usage: str, callback: Callable, alias: List[str] = None, no_split: bool = True):
         self.name = name
         self.description = description
         self.usage = usage
         self.callback = callback
         self.solver: Optional[Solver] = None
         self.aliases: List[str] = alias or []
+        self.no_split: bool = True
 
     def init(self, solver: 'Solver'):
         self.solver = solver
@@ -25,7 +26,7 @@ class Command(object):
         if len(params) == 1:
             return self.callback(self)
 
-        if len(params) == 2:
+        if len(params) == 2 and self.no_split:
             arguments = " ".join(arguments)
 
         if len(params) == 2 and params[1].annotation is Artist:

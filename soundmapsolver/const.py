@@ -51,11 +51,4 @@ PRINT_COLOR_MAPPING = {
     }
 }
 
-hint_const = ('**:mag_right: I recommend using a hint!**\n'
-              'Artist guesser has recently been updated to include a `Hint` button. Using the [button](https://cdn.discordapp.com/attachments/1324518793539616842/1362539741710385162/image.png)'
-              ' will reveal a key piece of information about the artist.')
-
-hint_alt_const = ('**:mag_right: I recommend using a hint!**\n'
-              'Artist guesser has recently been updated to include a `Hint` button. Using the [button](https://cdn.discordapp.com/attachments/1324518793539616842/1362539741710385162/image.png)'
-              ' will reveal a key piece of information about the artist.\n\nIdeally, use the hint **before** guessing anyone at all, '
-              'as the hints can sometimes reduce the artists to just 4-5 options!')
+hint_alt_const = ('**:mag_right: You should try using a hint** to get more information - if you can\'t use a hint, then ')

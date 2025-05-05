@@ -2,17 +2,17 @@ import csv
 import pyperclip
 import soundmapsolver
 from enum import Enum
-from collections import Counter, defaultdict
+from collections import Counter
 from rich.columns import Columns
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from rich.align import Align
 from typing import Optional, List, Tuple, Dict, Counter
 from .artist import Artist
 from .command import Command
 from .commands import commands
 from .const import *
+from .guess import Guess
 from .history import History
 from .rules import Rule, ExactRule, ExclusionRule, WithinRule, InRule
 
@@ -24,8 +24,7 @@ class Solver(object):
         self.commands: Dict[str, Command] = commands
         self.warnings: Dict[str, str] = {}
         self.history: List[History] = []
-        self.nick_jonas: Artist = None
-        self.russ: Artist = None
+        self.first_guesses: List[Guess] = []
         self.compact_mode: bool = False
 
         for command in self.commands.values():
@@ -36,16 +35,29 @@ class Solver(object):
     def import_csv_file(self, *, path: str):
         try:
             with open(path, mode='r') as file:
-                csv_reader = csv.DictReader(file)
+                csv_reader: csv.DictReader = csv.DictReader(file)
                 self.artists = [Artist(**row) for row in csv_reader]
                 self.artists = sorted(self.artists, key=lambda artist: artist.popularity, reverse=False)
+            
         except OSError:
             self.print_error(f'Could not import artists. Commands will not work. ({path})')
 
-    def print(self, *, content: str, text_color: str = "white", background_color: Optional[str] = None):
+    def import_first_guess_file(self, *, path: str) -> None:
+        try:
+            with open(path, mode='r') as file:
+                csv_reader: csv.DictReader = csv.DictReader(file)
+                self.first_guesses = [Guess(**row, solver=self) for row in csv_reader]
+
+        except OSError:
+            self.print_error(f'Could not import first guesses.')
+
+    def print(self, *, content: str, text_color: str = "white", background_color: Optional[str] = None) -> None:
         self.console.print(f'[{text_color}{f" on {background_color}" if background_color else ""}]{content}[/]')
 
-    def print_error(self, content: str):
+    def print_error(self, content: str) -> None:
+        self.print(content=f'{content}', text_color="red")
+
+    def print_success(self, content: str) -> None:
         self.print(content=f'{content}', text_color="red")
 
     def print_warning(self, content: str):
@@ -69,6 +81,8 @@ class Solver(object):
         command = self.commands.get(spl[0].lower())
 
         if not command:
+            if spl[0].startswith('https'):
+                return self.commands.get('recognize'), spl
             return self.commands.get('query'), spl
 
         return command, spl[1:]
@@ -109,81 +123,6 @@ class Solver(object):
             return len(path) + 0.5
         return len(path)
 
-    def entropy(self, *, query: str, options: List[Artist]) -> Artist:
-        if not options or len(options) == 0:
-            return []
-
-        if len(options) < 3:
-            return options[0]
-
-        if len(options) == 3:
-            return options[1]
-
-        best_artist = None
-        best_max_group_size = float('inf')
-
-        for artist in options:
-            partitions = defaultdict(list)
-
-            for answer in options:
-                if artist == answer:
-                    continue
-
-                calculation_query = f'{query} {self._build_query(start=artist, end=answer)}'
-                rules = self._build_rules(calculation_query)
-                remaining = self._get_passing_artists(rules=rules, artists=options)
-
-                if remaining:
-                    key = frozenset(a.name for a in remaining)
-                    partitions[key].append(answer)
-
-            if partitions:
-                max_group_size = max(len(group) for group in partitions.values())
-
-                if max_group_size < best_max_group_size:
-                    best_max_group_size = max_group_size
-                    best_artist = artist
-
-        return best_artist or options[0]
-
-    def _first_guess_calculation(
-            self,
-            *,
-            artists: List[Artist],
-            query: Optional[str] = None
-    ):
-        self.print(content="Calculating best first guess, as only one rule was provided.", text_color='white', background_color='red')
-
-        guess = None
-
-        if query == 'p':
-            guess = self._search('Nick Jonas')[0]
-        if query == 'r' or query == 'g':
-            guess = self._search('Thirty Seconds to Mars')[0]
-        if query == 'rb':
-            guess = self._search('Omarion')[0]
-        if query == 'i':
-            guess = self._search('Faye Webster')[0]
-        if query == 'h':
-            guess = self._search('Russ')[0]
-        if query == 'm' or query == 'us' or query == 'US':
-            guess = self._search('Kevin Gates')[0]
-        if query == 's':
-            guess = self._search('2 Chainz')[0]
-        if query == 'gb' or query == 'GB':
-            guess = self._search('Rita Ora')[0]
-        if query == 'f':
-            guess = self._search('Alessia Cara')[0]
-        if query == 'mx':
-            guess = self._search('No Doubt')[0]
-        if not guess:
-            guess = self.entropy(query=query, options=artists)
-
-        if guess:
-            self.print(content=f"{guess.name} is the best starting guess!", text_color='green', background_color='black')
-
-        return guess
-
     def _print_artists(
             self,
             *,
@@ -198,8 +137,6 @@ class Solver(object):
 
         if self.compact_mode:
             return self._print_compact(artists=artists, title=title, query=query, copy=copy, inferred_first_guess=inferred_first_guess, rules=rules)
-        if rules and len(rules) == 1:
-            recommend_guess = self._first_guess_calculation(artists=artists, query=query)
 
         table = Table(title=f'[b]{title}[/]', title_justify="left", title_style='none')
         table.add_column("Name", justify="left")
@@ -245,19 +182,6 @@ class Solver(object):
 
             inferred_first_guess = self._infer_first_guess(query=infer_query)
 
-        # if inferred_first_guess:
-        #     panel = Panel(Align.center(inferred_first_guess.name), title="Inferred first guess", expand=False)
-        #     panels.append(panel)
-        #     if inferred_first_guess.ranks[0] > 200:
-        #         if not ("+" in query):
-        #             warnings = [warning for warning in warnings if not warning[13:].startswith('I recommend using a better first guess')]
-        #             warnings.append(
-        #                 f"-# :warning: {inferred_first_guess.name} is not a good guess to start with. I recommend using Nick Jonas as your starting guess in the future "
-        #                 f"to improve your chances of getting 2 or even 3 gems.\n-# (Your guess ranked {self._ordinal(inferred_first_guess.ranks[0])} out of 1000 artists.)"
-        #             )
-        #             flags.append('(inferred)')
-        #             warnings = list(reversed(warnings))
-
         if len(flags) >= 1:
             panel = Panel(f", ".join(flags), title="Enabled flags", expand=False)
             panels.append(panel)
@@ -269,8 +193,6 @@ class Solver(object):
         if len(artists) == 0:
             return self.print_warning('No artists exist that match your query.')
         if len(artists) > 2:
-            #recommend_guess = self._recommended_guess_algorithm(artists)
-
             odds = (1 / len(artists)) * 100
             odds = f'{odds:.1f}%'
             panel = Panel(
@@ -281,14 +203,7 @@ class Solver(object):
             panels.append(panel)
 
         if len(artists) == 1:
-        #    if copy:
-        #        if inferred_first_guess:
-        #            path_a = self._get_path_size(start=inferred_first_guess, end=artists[0])
-        #            path_b = self._get_path_size(start=self.nick_jonas, end=artists[0])
-        #
-        #            if path_a > path_b:
-        #                warnings.append(f"If you had started with **Nick Jonas**, it could have been solved in {self._get_path_string_size(path_b)} guesses.")
-                self._copy_answer(artist=artists[0], warnings=warnings)
+            self._copy_answer(artist=artists[0], warnings=warnings)
 
         if len(artists) > 1 and 'hint' in query:
             if copy:
@@ -312,15 +227,13 @@ class Solver(object):
                 self._add_to_history(artist=recommend_guess, query=query, inferred_first_guess=inferred_first_guess)
 
         self.console.print(Columns(reversed(panels)))
-        #self.print_warning(f'Average amount of guesses for {self.russ.name}: {sum([artist.alt for artist in artists]) / len(artists)}')
-        #self.print_warning(f'Average amount of guesses for {self.nick_jonas.name}: {sum([artist.score for artist in artists]) / len(artists)}')
+        return None
 
     def _copy_suggest_hint(self, *, artist, odds, amount):
         odds = f'{odds:.1f}%'
+        message = self.message_formats.get('odds').replace("{ANSWER}", artist.name).replace("{AMOUNT}", str(amount)).replace("{ODDS}", odds)
 
-        message = f'If you do not want/can\'t use a hint, then **{self.message_formats.get('odds').replace("{ANSWER}", artist.name).replace("{AMOUNT}",
-                                                                                            str(amount)).replace("{ODDS}", odds)}.**'
-        return self._copy_to_clipboard(f'{hint_const}\n\n{message}\n-# If you can\'t see the button, you need to update your game in the App Store.')
+        return self._copy_to_clipboard(f'{hint_alt_const}{message}')
 
     def set_answer_message(self, format: str):
         self.message_formats['answer'] = format
@@ -626,6 +539,15 @@ class Solver(object):
         probability_of_2_3 = probability_of_2 + counter['3'] + counter['2 or 3'] / 2 + counter['3 or 4'] / 2
         probability_of_2_4 = probability_of_2_3 + counter['4'] + counter['3 or 4'] / 2 + counter['4 or 5'] / 2
 
+        if total <= 0:
+            # Only one artist — return 100% certainty
+            return {
+                2: 100.0,
+                3: 100.0,
+                4: 100.0,
+                5: 100.0
+            }
+
         return {
             2: probability_of_2 / total * 100,
             3: probability_of_2_3 / total * 100,
@@ -633,7 +555,10 @@ class Solver(object):
             5: 100 - (probability_of_2_4 / total) * 100
         }
 
-    def _enum_from_first_letter(self, *, enum_class: type[Enum], prefix: str):
+    def _enum_from_first_letter(self, *, enum_class: type[Enum] | str, prefix: str):
+        if isinstance(enum_class, str):
+            enum_class = getattr(soundmapsolver, enum_class.title())  # None if not found
+
         for member in enum_class:
             custom_prefix = PREFIX_OVERRIDES.get(member)
 
@@ -656,7 +581,7 @@ class Solver(object):
         return f"{n}{suffix}"
 
     def _print_odds_panel(self, *, artist: Artist):
-        return self.print(content="The odds panel has been disabled.", text_color='white', background_color='red')
+        #return self.print(content="The odds panel has been disabled.", text_color='white', background_color='red')
 
         odds = self._calculate_odds(artist=artist)
         odds = {key: f"{value:.1f}%" for key, value in odds.items()}
