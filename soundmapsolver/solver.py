@@ -218,11 +218,7 @@ class Solver(object):
                     self._copy_coin_flip(artist_a=artists[0], artist_b=artists[1], warnings=warnings)
             if len(artists) > 2:
                 if copy:
-                    if len(rules) > 1:
-                        self._copy_with_odds(artist=recommend_guess, odds=(1 / len(artists) * 100), amount=len(artists),
-                                             warnings=warnings)
-                    else:
-                        self._copy_first_guess(artist=recommend_guess)
+                    self._copy_with_odds(artist=recommend_guess, odds=(1 / len(artists) * 100), amount=len(artists), warnings=warnings)
 
                 self._add_to_history(artist=recommend_guess, query=query, inferred_first_guess=inferred_first_guess)
 
@@ -255,8 +251,6 @@ class Solver(object):
             "{ODDS}", odds)
         return self._copy_with_warnings(message, warnings=warnings)
 
-    def _copy_first_guess(self, *, artist: Artist):
-        return self._copy_to_clipboard(f'I recommend using `{artist.name}` as your first guess today!')
 
     def _add_to_history(self, *, artist: Artist, query: str, inferred_first_guess: Optional[Artist] = None):
         history = History(recommended_guess=artist, query=query, inferred_first_guess=inferred_first_guess)
