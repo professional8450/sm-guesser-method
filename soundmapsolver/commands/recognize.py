@@ -134,16 +134,17 @@ def callback(command: Command, src: str):
         )
 
     command.solver.console.print(table)
-    selected_song = None
 
-    command.solver.print_warning('Type a number [1-10] to play the song. Type "q" to exit this menu. The first song has been copied by default.')
+    command.solver.print_warning(
+        'Type a number [1-10] to play the song. Type "q" to exit this menu. The first song has been copied by default.')
+
+    selected_song = matches[0]
+    command.solver._copy_to_clipboard(
+        content=f'The song is most likely **"{selected_song['name']}"** (by {selected_song['artist']})!\n'
+                f'-# I recommend listening to the song to make sure: https://open.spotify.com/track/{selected_song["id"]}'
+    )
 
     while True:
-        selected_song = matches[0]
-        command.solver._copy_to_clipboard(
-            content=f'The song is most likely **"{selected_song['name']}"** (by {selected_song['artist']})!\n'
-                    f'-# I recommend listening to the song to make sure: https://open.spotify.com/track/{selected_song["id"]}'
-        )
 
         user_input = input(">> ").strip().lower()
 
