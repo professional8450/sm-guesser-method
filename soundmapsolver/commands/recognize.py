@@ -19,6 +19,28 @@ current_song_file = None
 temp_dir = tempfile.gettempdir()
 
 
+def generate_options_table(matches):
+    table = Table(title="Top 10 Matches", title_justify='left')
+
+    table.add_column("Song", justify="left")
+    table.add_column("Confidence", justify="left")
+
+    for i, m in enumerate(matches):
+        if i != 0:
+            label = f"[{i + 1}] {m['artist']} - {m['name']}"
+            confidence = f"{m['confidence']}% ({m['exact_matches']} matches)"
+        else:
+            label = f"[green][{i + 1}] {m['artist']} - {m['name']}[/green]"
+            confidence = f"[green]{m['confidence']}% ({m['exact_matches']} matches)[/green]"
+
+        table.add_row(
+            label,
+            confidence
+        )
+
+    return table
+
+
 def download_audio(url: str):
     temp_file_path = os.path.join(temp_dir, "temp_audio.mp3")
 
@@ -84,7 +106,7 @@ def callback(command: Command, src: str):
     if genre not in ('hiphop', 'pop', 'indie', 'rnb', 'rock', 'unknown'):
         return command.solver.print_error('Please provide a valid genre, or use "unknown".')
 
-    url = f"https://soundmap.tools/api/soundGuesser?genre={genre}"
+    url = f"https://soundmap.tools/api/soundGuesser?genre={genre}" if genre != 'unknown' else f"https://soundmap.tools/api/soundGuesser?genre=any"
     boundary = "----geckoformboundary779aea642d0b1072415dbb4021628d1"
 
     payload = (
@@ -101,7 +123,12 @@ def callback(command: Command, src: str):
 
     result = requests.post(url, data=payload.encode(), headers=headers)
     matches = []
-    for match in result.json().get('matches'):
+    data = result.json().get('matches')
+
+    if not data:
+        return command.solver.print_error('No matches found.')
+
+    for match in data:
         matches.append({
             'artist': match['artist']['name'],
             'confidence': int(match['confidence']),
@@ -111,60 +138,82 @@ def callback(command: Command, src: str):
             'id': match['id']
         })
     matches = sorted(matches, key=lambda item: item['confidence'], reverse=True)
-    table = Table(title="Top 10 Matches", title_justify='left')
 
-    table.add_column("Song", justify="left")
-    table.add_column("Match", justify="left")
-    table.add_column("Confidence", justify="left")
+    if len(matches) == 0:
+        return command.solver.print_error('No matches found.')
 
-    for i, m in enumerate(matches[:10]):
-        if i != 0:
-            label = f"[{i + 1}] {m['artist']} - {m['name']}"
-            confidence = f"{m['confidence']}% confidence ({m['exact_matches']} matches)"
-            bar = ProgressBar(total=100, completed=m['confidence'], complete_style=Style(color='white'))
-        else:
-            label = f"[green][{i + 1}] {m['artist']} - {m['name']}[/green]"
-            confidence = f"[green]{m['confidence']}% confidence ({m['exact_matches']} matches)[/green]"
-            bar = ProgressBar(total=100, completed=m['confidence'], complete_style=Style(color='green'))
+    selected_matches = matches[:10]
+    selected_song = selected_matches[0]
 
-        table.add_row(
-            label,
-            confidence,
-            bar
-        )
-
-    command.solver.console.print(table)
+    command.solver.call('clear')
+    command.solver.console.print(generate_options_table(selected_matches))
 
     command.solver.print_warning(
-        'Type a number [1-10] to play the song. Type "q" to exit this menu. The first song has been copied by default.')
+        'Type a number [1-10] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
+    )
 
-    selected_song = matches[0]
     command.solver._copy_to_clipboard(
         content=f'The song is most likely **"{selected_song['name']}"** (by {selected_song['artist']})!\n'
                 f'-# I recommend listening to the song to make sure: https://open.spotify.com/track/{selected_song["id"]}'
     )
+    last_input = None
 
     while True:
-
-        user_input = input(">> ").strip().lower()
+        unmodified_user_input = input(">> ").strip()
+        user_input = unmodified_user_input.lower()
 
         if user_input == 'q':
             command.solver.print_error(content='Exiting.')
             stop_song()
             break
 
+        if user_input.startswith('https') or user_input.startswith('first'):
+            return command.solver.call(unmodified_user_input)
+
+        if user_input == 'reset':
+            selected_matches = list(sorted(matches, key=lambda item: item['confidence'], reverse=True))[:10]
+            selected_song = selected_matches[0]
+
+            command.solver.call('clear')
+            command.solver.print_warning(
+                'Type a number [1-10] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
+            )
+            command.solver.console.print(generate_options_table(selected_matches))
+
+        if user_input.startswith('artist '):
+            artist = user_input.split(' ')[1]
+            selected_matches = list(filter(lambda item: item['artist'].lower().startswith(artist.lower()), sorted(matches, key=lambda item: item['confidence'], reverse=True)))[:10]
+            selected_song = selected_matches[0]
+
+            command.solver.call('clear')
+            command.solver.print_warning(
+                'Type a number [1-10] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
+            )
+            command.solver.console.print(generate_options_table(selected_matches))
+
+        if user_input.startswith('song '):
+            artist = user_input.split(' ')[1]
+            selected_matches = list(filter(lambda item: item['name'].lower().startswith(artist.lower()), sorted(matches, key=lambda item: item['confidence'], reverse=True)))[:10]
+            selected_song = selected_matches[0]
+
+            command.solver.call('clear')
+            command.solver.print_warning(
+                'Type a number [1-10] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
+            )
+            command.solver.console.print(generate_options_table(selected_matches))
+
         elif user_input == 'stop' or user_input == 's':
             stop_song()
 
         elif user_input.isdigit() and 1 <= int(user_input) <= 10:
             song_index = int(user_input) - 1
-            selected_song = matches[song_index]
+            selected_song = selected_matches[song_index]
 
             command.solver.print_success(
                 content=f'Playing: "{selected_song["name"]}". Type stop to end playing, or quit to exit the menu.')
             command.solver._copy_to_clipboard(
-                content=f'The song is most likely **"{selected_song['name']}"** (by {selected_song['artist']})!\n'
-                        f'-# I recommend listening to the song to make sure: https://open.spotify.com/track/{selected_song["id"]}'
+                content=f'>>> **"{selected_song['name']}"** (by {selected_song['artist']})\n'
+                        f'-# https://open.spotify.com/track/{selected_song["id"]}'
             )
 
             play_song(selected_song['preview_url'])
@@ -172,13 +221,17 @@ def callback(command: Command, src: str):
         elif user_input == 'copy':
             command.solver.print_success(content=f'Copying {selected_song["name"]}.')
             command.solver._copy_to_clipboard(
-                content=f'The song is most likely **"{selected_song['name']}"** (by {selected_song['artist']})!\n'
-                        f'-# I recommend listening to the song to make sure: https://open.spotify.com/track/{selected_song["id"]}'
+                content=f'>>> **"{selected_song['name']}"** (by {selected_song['artist']})!\n'
+                        f'-# https://open.spotify.com/track/{selected_song["id"]}'
             )
             break
 
+        elif user_input == "r" and last_input is not None:
+            return command.solver.call(last_input)
+
         else:
-            command.solver.print_error(content='Invalid input. Type "q" to exit.')
+            last_input = user_input
+            command.solver.print_error(content='Invalid input. Type "q" to exit, or "r" to exit and run the command you just entered.')
 
 
 command = Command(

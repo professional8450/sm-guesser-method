@@ -63,8 +63,13 @@ class Solver(object):
     def print_warning(self, content: str):
         self.print(content=f'{content}', text_color="yellow")
 
+    def call(self, command: str) -> None:
+        command, arguments = self._parse_command(command)
+        if command:
+            command.run(arguments)
+
     def run(self):
-        if not self.artists:
+        if (not self.artists) or (not self.first_guesses):
             self.print_error('Artists have not been loaded. The solver could not be run.')
             return
 
