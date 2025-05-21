@@ -69,9 +69,12 @@ class Solver(object):
             command.run(arguments)
 
     def run(self):
-        if (not self.artists) or (not self.first_guesses):
+        if not self.artists:
             self.print_error('Artists have not been loaded. The solver could not be run.')
             return
+
+        if not self.first_guesses:
+            self.print_error('First guesses have not been loaded. The "first" command has been disabled.')
 
         print(f'The Method v{soundmapsolver.__version__}, Python {sys.version}')
 
@@ -95,25 +98,6 @@ class Solver(object):
     def _format_value(self, *, value: str, color: str, compact: bool = False):
         return f'[{color}]{value.replace(' or ', '-')}[/]' if not compact else f'[{color}]{value[0] if value != 'R&B' else 'RB'}[/]'
 
-    def _infer_first_guess(self, *, query: str) -> Optional[Artist]:
-        rules = self._build_rules(query)
-        genre_rules = [rule for rule in rules if rule.attribute == 'genre']
-        popularity_rules = [rule for rule in rules if rule.attribute == 'popularity']
-
-        debut_rules = [rule for rule in rules if rule.attribute == 'debut']
-        gender_rules = [rule for rule in rules if rule.attribute == 'gender']
-
-        if len(genre_rules) != 1 or len(popularity_rules) != 1 or len(debut_rules) > 1 or len(gender_rules) > 1:
-            return
-
-        genre = genre_rules[0]._original_value
-        popularity = popularity_rules[0]._original_value
-        artist = [artist for artist in self.artists if artist.genre == genre and artist.popularity == popularity]
-        if len(artist) > 1:
-            return
-
-        return artist[0]
-
     def _get_path_string_size(self, size):
         lower = int(size)
         upper = lower + 1
@@ -135,13 +119,12 @@ class Solver(object):
             title: str = "Artists",
             query: Optional[str] = None,
             copy: bool = True,
-            inferred_first_guess: Optional[Artist] = None,
             rules: Optional[List[Rule]] = None
     ):
         recommend_guess = None
 
         if self.compact_mode:
-            return self._print_compact(artists=artists, title=title, query=query, copy=copy, inferred_first_guess=inferred_first_guess, rules=rules)
+            return self._print_compact(artists=artists, title=title, query=query, copy=copy, rules=rules)
 
         table = Table(title=f'[b]{title}[/]', title_justify="left", title_style='none')
         table.add_column("Name", justify="left")
@@ -177,16 +160,6 @@ class Solver(object):
             flags = []
             warnings = []
 
-        inferred_first_guess = inferred_first_guess
-        if rules and not inferred_first_guess:
-            infer_query = query.split(' ; ')
-            if len(infer_query) >= 2:
-                infer_query = infer_query[0]
-            else:
-                infer_query = query
-
-            inferred_first_guess = self._infer_first_guess(query=infer_query)
-
         if len(flags) >= 1:
             panel = Panel(f", ".join(flags), title="Enabled flags", expand=False)
             panels.append(panel)
@@ -216,7 +189,7 @@ class Solver(object):
                     artist=recommend_guess or artists[0], odds=(1 / len(artists) * 100), amount=len(artists)
                 )
 
-                self._add_to_history(artist=recommend_guess, query=query.replace('hint', ''), inferred_first_guess=inferred_first_guess)
+                self._add_to_history(artist=recommend_guess, query=query.replace('hint', ''))
         else:
             if len(artists) == 2:
                 if copy:
@@ -225,7 +198,7 @@ class Solver(object):
                 if copy:
                     self._copy_with_odds(artist=recommend_guess, odds=(1 / len(artists) * 100), amount=len(artists), warnings=warnings)
 
-                self._add_to_history(artist=recommend_guess, query=query, inferred_first_guess=inferred_first_guess)
+                self._add_to_history(artist=recommend_guess, query=query)
 
         self.console.print(Columns(reversed(panels)))
         return None
@@ -257,8 +230,8 @@ class Solver(object):
         return self._copy_with_warnings(message, warnings=warnings)
 
 
-    def _add_to_history(self, *, artist: Artist, query: str, inferred_first_guess: Optional[Artist] = None):
-        history = History(recommended_guess=artist, query=query, inferred_first_guess=inferred_first_guess)
+    def _add_to_history(self, *, artist: Artist, query: str):
+        history = History(recommended_guess=artist, query=query)
         self.history.append(history)
 
     def _get_from_history(self, search: str):
@@ -640,7 +613,6 @@ class Solver(object):
             title: str = "Artists",
             query: Optional[str] = None,
             copy: bool = True,
-            inferred_first_guess: Optional[Artist] = None,
             rules: Optional[List[Rule]] = None
     ):
 
@@ -678,29 +650,6 @@ class Solver(object):
         else:
             flags = []
             warnings = []
-
-        inferred_first_guess = inferred_first_guess
-        if rules and not inferred_first_guess:
-            infer_query = query.split(' ; ')
-            if len(infer_query) >= 2:
-                infer_query = infer_query[0]
-            else:
-                infer_query = query
-
-            inferred_first_guess = self._infer_first_guess(query=infer_query)
-
-        # if inferred_first_guess:
-        #     panel = Panel(Align.center(inferred_first_guess.name), title="Inferred first guess", expand=False)
-        #     panels.append(panel)
-        #     if inferred_first_guess.ranks[0] > 200:
-        #         if not ("+" in query):
-        #             warnings = [warning for warning in warnings if not warning[13:].startswith('I recommend using a better first guess')]
-        #             warnings.append(
-        #                 f"-# :warning: {inferred_first_guess.name} is not a good guess to start with. I recommend using Nick Jonas as your starting guess in the future "
-        #                 f"to improve your chances of getting 2 or even 3 gems.\n-# (Your guess ranked {self._ordinal(inferred_first_guess.ranks[0])} out of 1000 artists.)"
-        #             )
-        #             flags.append('(inferred)')
-        #             warnings = list(reversed(warnings))
 
         if len(flags) >= 1:
             panel = Panel(f", ".join(flags), title="Enabled flags", expand=False)
@@ -744,6 +693,6 @@ class Solver(object):
 
                 self._copy_with_odds(artist=recommend_guess, odds=(1 / len(artists) * 100), amount=len(artists),
                                      warnings=warnings)
-            self._add_to_history(artist=recommend_guess, query=query, inferred_first_guess=inferred_first_guess)
+            self._add_to_history(artist=recommend_guess, query=query)
 
         self.console.print(Columns(reversed(panels)))

@@ -3,6 +3,9 @@ from ..artist import Artist
 
 
 def callback(command: Command, search: str):
+    if not command.solver.first_guesses:
+        return command.solver.print_error('This command is disabled.')
+
     artist = None
     if len(search) == 4 and search.isdigit():  # Debut
         artist = next(
@@ -48,8 +51,11 @@ def callback(command: Command, search: str):
             artist.artist.name if artist else 'Sorry, but I think you typed it incorrectly.')
 
     command.solver._copy_to_clipboard(
-        f'The best starting guess for your hint `({artist.attribute.lower()} = {artist.value})` is **{artist.artist.name}**!'
+        f'The best starting guess for your hint `({artist.value} {artist.attribute.lower()})` is **{artist.artist.name}**!'
     )
+
+    command.solver.print_success(f'{artist.value} {artist.attribute.lower()}) = {artist.artist.name}')
+    return None
 
 
 command = Command(

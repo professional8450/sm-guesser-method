@@ -84,7 +84,7 @@ def callback(command: Command, src: str):
     try:
         src, genre = src.split(" ", 1)
     except ValueError:
-        return command.solver.print_error('Please provide a genre, or use "unknown".')
+        return command.solver.print_error('Please provide a valid genre.')
 
     genre = genre.lower()
 
@@ -104,9 +104,9 @@ def callback(command: Command, src: str):
         genre = 'rock'
 
     if genre not in ('hiphop', 'pop', 'indie', 'rnb', 'rock', 'unknown'):
-        return command.solver.print_error('Please provide a valid genre, or use "unknown".')
+        return command.solver.print_error('Please provide a valid genre.')
 
-    url = f"https://soundmap.tools/api/soundGuesser?genre={genre}" if genre != 'unknown' else f"https://soundmap.tools/api/soundGuesser?genre=any"
+    url = f"https://api.soundmap.tools/songGuesser/recognize?genre={genre}"
     boundary = "----geckoformboundary779aea642d0b1072415dbb4021628d1"
 
     payload = (
