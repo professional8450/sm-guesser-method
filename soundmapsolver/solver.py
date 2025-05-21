@@ -58,7 +58,7 @@ class Solver(object):
         self.print(content=f'{content}', text_color="red")
 
     def print_success(self, content: str) -> None:
-        self.print(content=f'{content}', text_color="red")
+        self.print(content=f'{content}', text_color="green")
 
     def print_warning(self, content: str):
         self.print(content=f'{content}', text_color="yellow")

@@ -153,8 +153,8 @@ def callback(command: Command, src: str):
     )
 
     command.solver._copy_to_clipboard(
-        content=f'The song is most likely **"{selected_song['name']}"** (by {selected_song['artist']})!\n'
-                f'-# I recommend listening to the song to make sure: https://open.spotify.com/track/{selected_song["id"]}'
+        content=f'>>> **"{selected_song['name']}"** (by {selected_song['artist']})!\n'
+                f'-# https://open.spotify.com/track/{selected_song["id"]}'
     )
     last_input = None
 

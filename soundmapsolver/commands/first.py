@@ -54,7 +54,7 @@ def callback(command: Command, search: str):
         f'The best starting guess for your hint `({artist.value} {artist.attribute.lower()})` is **{artist.artist.name}**!'
     )
 
-    command.solver.print_success(f'{artist.value} {artist.attribute.lower()}) = {artist.artist.name}')
+    command.solver.print_success(f'{artist.value} {artist.attribute.lower()} = {artist.artist.name}')
     return None
 
 
