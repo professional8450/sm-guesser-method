@@ -20,7 +20,8 @@ CONTINENT_MAPPING = {
 
 PREFIX_OVERRIDES = {
     Genre.rnb: 'rb',
-    Gender.mixed: 'mx'
+    Gender.mixed: 'mx',
+    Genre.kpop: 'k'
 }
 
 CLOSE_POPULARITY_RANGE = 50
@@ -37,6 +38,7 @@ PRINT_COLOR_MAPPING = {
         Genre.hiphop: 'yellow',
         Genre.rock: 'magenta',
         Genre.rnb: 'bright_blue',
+        Genre.kpop: 'orange'
     },
     "gender": {
         Gender.male: 'blue',

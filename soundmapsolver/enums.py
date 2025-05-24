@@ -7,6 +7,7 @@ class Genre(Enum):
     indie = 'Indie'
     rnb = 'R&B'
     rock = 'Rock'
+    kpop = 'K-Pop'
 
 
 class Members(Enum):

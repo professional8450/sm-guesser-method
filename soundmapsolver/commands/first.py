@@ -33,14 +33,14 @@ def callback(command: Command, search: str):
                    command.solver.first_guesses), None
         )
 
-    if search in ('r', 'h', 'rb', 'p', 'i'):  # Genre
+    if search in ('r', 'h', 'rb', 'p', 'i', 'k'):  # Genre
         artist = next(
             filter(lambda item: item.artist.genre == command.solver._enum_from_first_letter(enum_class='genre',
                                                                                             prefix=search) and item.attribute == 'genre',
                    command.solver.first_guesses), None
         )
 
-    if len(search) == 2 and search not in ('h', 'p', 'r', 'rb', 'i', 'mx') and not search.isdigit():  # Country
+    if len(search) == 2 and search not in ('h', 'p', 'r', 'rb', 'i', 'k', 'mx') and not search.isdigit():  # Country
         artist = next(
             filter(lambda item: item.artist.country == search.upper() and item.attribute == 'country',
                    command.solver.first_guesses), None

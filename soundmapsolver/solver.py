@@ -430,7 +430,7 @@ class Solver(object):
                                          values=[self._enum_from_first_letter(prefix=part.lower(), enum_class=Members)])
                 rules.append(rule)
 
-            if part in ('h', 'p', 'r', 'rb', 'i'):
+            if part in ('h', 'p', 'r', 'rb', 'i', 'k'):
                 if not exclusion:
                     rule = ExactRule(attribute='genre',
                                      value=self._enum_from_first_letter(prefix=part.lower(), enum_class=Genre))
@@ -442,7 +442,7 @@ class Solver(object):
                 rules.append(rule)
                 continue
 
-            if len(part) == 2 and part not in ('h', 'p', 'r', 'rb', 'i', 'mx') and not part.isdigit():
+            if len(part) == 2 and part not in ('h', 'p', 'r', 'rb', 'i', 'k', 'mx') and not part.isdigit():
                 if self._get_continent(part.upper()) == 'unknown':
                     break
 

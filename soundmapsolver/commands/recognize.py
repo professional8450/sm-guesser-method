@@ -131,7 +131,7 @@ def callback(command: Command, src: str):
     for match in data:
         matches.append({
             'artist': match['artist']['name'],
-            'confidence': int(match['confidence']),
+            'confidence': int(match['confidence']) or 0 if match['confidence'] != 'NaN' else 0,
             'exact_matches': int(match['exactMatches']),
             'preview_url': match['preview_url'],
             'name': match['name'],

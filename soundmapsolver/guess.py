@@ -9,3 +9,4 @@ class Guess:
         self.attribute = attribute
         self.value = value
         self.artist = solver._search(artist)[0]
+
