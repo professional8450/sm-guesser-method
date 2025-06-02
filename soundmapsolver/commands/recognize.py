@@ -1,5 +1,6 @@
 import io
 import os
+import re
 import tempfile
 import pygame
 import requests
@@ -20,7 +21,7 @@ temp_dir = tempfile.gettempdir()
 
 
 def generate_options_table(matches):
-    table = Table(title="Top 10 Matches", title_justify='left')
+    table = Table(title="Top 25 Matches", title_justify='left')
 
     table.add_column("Song", justify="left")
     table.add_column("Confidence", justify="left")
@@ -80,30 +81,39 @@ def play_song(url):
     current_song = url
 
 
-def callback(command: Command, src: str):
-    try:
-        src, genre = src.split(" ", 1)
-    except ValueError:
-        return command.solver.print_error('Please provide a valid genre.')
+def callback(command: Command, s: str):
+    url_match = re.search(r"(https?://\S+)\s+(\w)", s)
+    src_url = url_match.group(1) if url_match else "-"
+    genre = url_match.group(2) if url_match else "-"
 
-    genre = genre.lower()
+    artist_match = re.search(r"artist (\w)", s)
+    artistHint = artist_match.group(1) if artist_match else False
 
-    if genre in ('h', 'hip-hop', 'hiphop'):
-        genre = 'hiphop'
+    song_match = re.search(r"song (\w)", s)
+    songHint = song_match.group(1) if song_match else False
 
-    if genre in ('p', 'pop'):
-        genre = 'pop'
+    genre_map = {
+        'h': 'hiphop',
+        'hip-hop': 'hiphop',
+        'hiphop': 'hiphop',
+        'p': 'pop',
+        'pop': 'pop',
+        'i': 'indie',
+        'indie': 'indie',
+        'r&b': 'rnb',
+        'rb': 'rnb',
+        'rnb': 'rnb',
+        'r': 'rock',
+        'rock': 'rock',
+        'k': 'kpop',
+        'kpop': 'kpop',
+        'e': 'electronic',
+        'electronic': 'electronic'
+    }
 
-    if genre in ('i', 'indie'):
-        genre = 'indie'
+    genre = genre_map.get(genre.lower(), genre.lower())
 
-    if genre in ('r&b', 'rb', 'rnb'):
-        genre = 'rnb'
-
-    if genre in ('r', 'rock'):
-        genre = 'rock'
-
-    if genre not in ('hiphop', 'pop', 'indie', 'rnb', 'rock', 'unknown'):
+    if genre not in ('hiphop', 'pop', 'indie', 'rnb', 'rock', 'kpop', 'electronic'):
         return command.solver.print_error('Please provide a valid genre.')
 
     url = f"https://api.soundmap.tools/songGuesser/recognize?genre={genre}"
@@ -113,7 +123,7 @@ def callback(command: Command, src: str):
         f"{boundary}\r\n"
         'Content-Disposition: form-data; name="url"\r\n'
         "\r\n"
-        f"{src}\r\n"
+        f"{src_url}\r\n"
         f"{boundary}--\r\n"
     )
 
@@ -142,18 +152,26 @@ def callback(command: Command, src: str):
     if len(matches) == 0:
         return command.solver.print_error('No matches found.')
 
-    selected_matches = matches[:10]
+    selected_matches = matches[:25]
     selected_song = selected_matches[0]
+
+    if artistHint:
+        selected_matches = list(filter(lambda item: item['artist'].lower().startswith(artistHint.lower()), sorted(matches, key=lambda item: item['confidence'], reverse=True)))[:25]
+        selected_song = selected_matches[0]
+
+    if songHint:
+        selected_matches = list(filter(lambda item: item['name'].lower().startswith(songHint.lower()), sorted(matches, key=lambda item: item['confidence'], reverse=True)))[:25]
+        selected_song = selected_matches[0]
 
     command.solver.call('clear')
     command.solver.console.print(generate_options_table(selected_matches))
 
     command.solver.print_warning(
-        'Type a number [1-10] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
+        'Type a number [1-25] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
     )
 
     command.solver._copy_to_clipboard(
-        content=f'>>> **"{selected_song['name']}"** (by {selected_song['artist']})!\n'
+        content=f'>>> **"{selected_song['name']}"** (by {selected_song['artist']})\n'
                 f'-# https://open.spotify.com/track/{selected_song["id"]}'
     )
     last_input = None
@@ -171,41 +189,41 @@ def callback(command: Command, src: str):
             return command.solver.call(unmodified_user_input)
 
         if user_input == 'reset':
-            selected_matches = list(sorted(matches, key=lambda item: item['confidence'], reverse=True))[:10]
+            selected_matches = list(sorted(matches, key=lambda item: item['confidence'], reverse=True))[:25]
             selected_song = selected_matches[0]
 
             command.solver.call('clear')
             command.solver.print_warning(
-                'Type a number [1-10] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
+                'Type a number [1-25] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
             )
             command.solver.console.print(generate_options_table(selected_matches))
 
         if user_input.startswith('artist '):
             artist = user_input.split(' ')[1]
-            selected_matches = list(filter(lambda item: item['artist'].lower().startswith(artist.lower()), sorted(matches, key=lambda item: item['confidence'], reverse=True)))[:10]
+            selected_matches = list(filter(lambda item: item['artist'].lower().startswith(artist.lower()), sorted(matches, key=lambda item: item['confidence'], reverse=True)))[:25]
             selected_song = selected_matches[0]
 
             command.solver.call('clear')
             command.solver.print_warning(
-                'Type a number [1-10] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
+                'Type a number [1-25] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
             )
             command.solver.console.print(generate_options_table(selected_matches))
 
         if user_input.startswith('song '):
             artist = user_input.split(' ')[1]
-            selected_matches = list(filter(lambda item: item['name'].lower().startswith(artist.lower()), sorted(matches, key=lambda item: item['confidence'], reverse=True)))[:10]
+            selected_matches = list(filter(lambda item: item['name'].lower().startswith(artist.lower()), sorted(matches, key=lambda item: item['confidence'], reverse=True)))[:25]
             selected_song = selected_matches[0]
 
             command.solver.call('clear')
             command.solver.print_warning(
-                'Type a number [1-10] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
+                'Type a number [1-25] to play the song. Type "q" to exit this menu. The first song has been copied by default.'
             )
             command.solver.console.print(generate_options_table(selected_matches))
 
         elif user_input == 'stop' or user_input == 's':
             stop_song()
 
-        elif user_input.isdigit() and 1 <= int(user_input) <= 10:
+        elif user_input.isdigit() and 1 <= int(user_input) <= 25:
             song_index = int(user_input) - 1
             selected_song = selected_matches[song_index]
 
