@@ -553,7 +553,7 @@ class Solver(object):
         return f"{n}{suffix}"
 
     def _print_odds_panel(self, *, artist: Artist):
-        #return self.print(content="The odds panel has been disabled.", text_color='white', background_color='red')
+        return
 
         odds = self._calculate_odds(artist=artist)
         odds = {key: f"{value:.1f}%" for key, value in odds.items()}
