@@ -1,12 +1,13 @@
 import sys
 from .enums import Members, Genre, Gender
 
-AMERICA = ('US', 'CA', 'MX', 'BB')
-EUROPE = ('FR', 'DE', 'GB', 'NO', 'BE', 'DK', 'ES', 'IE', 'IT', 'NL', 'PL', 'RO', 'SE', 'UA')
+AMERICA = ('US', 'CA', 'MX', 'BB', 'PR', 'HT', 'JM')  # Added HT (Haiti)
+EUROPE = ('FR', 'DE', 'GB', 'NO', 'BE', 'DK', 'ES', 'IE', 'IT', 'NL', 'RO', 'SE', 'UA', 'HR', 'IS')
 OCEANIA = ('AU', 'NZ')
-LATIN = ('BR', 'AR', 'CO')
-ASIA = ('ID', 'KR', 'IL', 'NP', 'PH', 'PK', 'TR', 'VN', 'IS', 'AM', 'UZ', 'RU')
-AFRICA = ('NG', 'TZ', 'ZA')
+LATIN = ('BR', 'AR', 'CO', 'CL', 'UY', 'VE')
+ASIA = ('ID', 'KR', 'NP', 'PH', 'PK', 'TR', 'VN', 'AM', 'RU', 'JP', 'KG')
+AFRICA = ('NG', 'TZ', 'ZA', 'GH', 'CD', 'DZ')
+
 INT_MAX = sys.maxsize
 
 CONTINENT_MAPPING = {
@@ -17,6 +18,7 @@ CONTINENT_MAPPING = {
     "asia": ASIA,
     "africa": AFRICA
 }
+
 
 PREFIX_OVERRIDES = {
     Genre.rnb: 'rb',

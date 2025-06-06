@@ -1,4 +1,6 @@
 import csv
+import os
+
 import pyperclip
 import soundmapsolver
 from enum import Enum
@@ -34,7 +36,7 @@ class Solver(object):
 
     def import_csv_file(self, *, path: str):
         try:
-            with open(path, mode='r') as file:
+            with open(path, mode='r', encoding='utf-8') as file:
                 csv_reader: csv.DictReader = csv.DictReader(file)
                 self.artists = [Artist(**row) for row in csv_reader]
                 self.artists = sorted(self.artists, key=lambda artist: artist.popularity, reverse=False)
@@ -69,6 +71,7 @@ class Solver(object):
             command.run(arguments)
 
     def run(self):
+        os.system('chcp 65001')
         if not self.artists:
             self.print_error('Artists have not been loaded. The solver could not be run.')
             return
@@ -329,6 +332,7 @@ class Solver(object):
         history = [(start, None), ]
         while (not answer) or len(answer) > 2:
             query = f'{query} {self._build_query(start=start, end=end)}'
+
             rules = self._build_rules(query)
             answer = self._get_passing_artists(rules=rules)
 
@@ -444,7 +448,7 @@ class Solver(object):
 
             if len(part) == 2 and part not in ('h', 'p', 'r', 'rb', 'i', 'k', 'mx') and not part.isdigit():
                 if self._get_continent(part.upper()) == 'unknown':
-                    break
+                    self.print_error(f'{part.upper()} has no matching continent!')
 
                 if (not exclusion) and (not yellow):
                     rule = ExactRule(attribute='country', value=part.upper())
