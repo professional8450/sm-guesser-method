@@ -1,7 +1,7 @@
 import sys
 from .enums import Members, Genre, Gender
 
-AMERICA = ('US', 'CA', 'MX', 'BB', 'PR', 'HT', 'JM')  # Added HT (Haiti)
+AMERICA = ('US', 'CA', 'MX', 'BB', 'PR', 'HT', 'JM')
 EUROPE = ('FR', 'DE', 'GB', 'NO', 'BE', 'DK', 'ES', 'IE', 'IT', 'NL', 'RO', 'SE', 'UA', 'HR', 'IS')
 OCEANIA = ('AU', 'NZ')
 LATIN = ('BR', 'AR', 'CO', 'CL', 'UY', 'VE')

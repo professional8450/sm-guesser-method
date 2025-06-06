@@ -46,7 +46,7 @@ class Solver(object):
 
     def import_first_guess_file(self, *, path: str) -> None:
         try:
-            with open(path, mode='r') as file:
+            with open(path, mode='r', encoding='utf-8') as file:
                 csv_reader: csv.DictReader = csv.DictReader(file)
                 self.first_guesses = [Guess(**row, solver=self) for row in csv_reader]
 
