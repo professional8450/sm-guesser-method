@@ -189,7 +189,7 @@ class Solver(object):
         if len(artists) > 1 and 'hint' in query:
             if copy:
                 self._copy_suggest_hint(
-                    artist=recommend_guess or artists[0], odds=(1 / len(artists) * 100), amount=len(artists)
+                    artist=recommend_guess or artists[0], odds=(1 / len(artists) * 100), amount=len(artists), warnings=warnings
                 )
 
                 self._add_to_history(artist=recommend_guess, query=query.replace('hint', ''))
@@ -206,11 +206,17 @@ class Solver(object):
         self.console.print(Columns(reversed(panels)))
         return None
 
-    def _copy_suggest_hint(self, *, artist, odds, amount):
+    def _copy_suggest_hint(self, *, artist, odds, amount, warnings):
         odds = f'{odds:.1f}%'
         message = self.message_formats.get('odds').replace("{ANSWER}", artist.name).replace("{AMOUNT}", str(amount)).replace("{ODDS}", odds)
+        content = f'{hint_alt_const}{message}'
 
-        return self._copy_to_clipboard(f'{hint_alt_const}{message}')
+        if len(warnings) == 1:
+            content += f'\n({warnings[0]})'
+        if len(warnings) == 2:
+            content += f'\n({warnings[0]}, and also{warnings[1].replace("next time", "")})'
+
+        return self._copy_to_clipboard(content)
 
     def set_answer_message(self, format: str):
         self.message_formats['answer'] = format
@@ -256,7 +262,7 @@ class Solver(object):
                 flags.append(word)
                 warning = self.warnings.get(flag)
                 if warning:
-                    result.append(f'-# :triangular_flag_on_post: {warning}')
+                    result.append(f'{warning}')
         return flags, result
 
     def _copy_to_clipboard(self, content: str):
@@ -277,10 +283,10 @@ class Solver(object):
         return self._copy_with_warnings(message, warnings=warnings)
 
     def _copy_with_warnings(self, content: str, *, warnings: List[str] = None):
-        if warnings:
-            content += "\n\n"
-            content += "\n".join(warnings)
-
+        if len(warnings) == 1:
+            content += f'\n({warnings[0]})'
+        if len(warnings) == 2:
+            content += f'\n({warnings[0]}, and also{warnings[1].replace("next time", "")})'
         pyperclip.copy(content)
 
     def _symbol(self, condition, true_symbol, false_symbol=""):

@@ -55,4 +55,4 @@ PRINT_COLOR_MAPPING = {
     }
 }
 
-hint_alt_const = ('**:mag_right: You should try using a hint** to get more information - if you can\'t use a hint, then ')
+hint_alt_const = ('Use a hint, or (if you can\'t use a hint): ')

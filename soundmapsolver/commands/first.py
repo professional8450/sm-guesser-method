@@ -51,7 +51,7 @@ def callback(command: Command, search: str):
             artist.artist.name if artist else 'Sorry, but I think you typed it incorrectly.')
 
     command.solver._copy_to_clipboard(
-        f'The best starting guess for your hint `({artist.value} {artist.attribute.lower()})` is **{artist.artist.name}**!'
+        f'Best guess for {artist.value} {artist.attribute.lower()} is **{artist.artist.name}**'
     )
 
     command.solver.print_success(f'{artist.value} {artist.attribute.lower()} = {artist.artist.name}')
