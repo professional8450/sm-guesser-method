@@ -230,7 +230,7 @@ def callback(command: Command, s: str):
             command.solver.print_success(
                 content=f'Playing: "{selected_song["name"]}". Type stop to end playing, or quit to exit the menu.')
             command.solver._copy_to_clipboard(
-                content=f'>>> **"{selected_song['name']}"** (by {selected_song['artist']})\n'
+                content=f'**"{selected_song['name']}"** (by {selected_song['artist']})\n'
                         f'-# https://open.spotify.com/track/{selected_song["id"]}'
             )
 
@@ -239,7 +239,7 @@ def callback(command: Command, s: str):
         elif user_input == 'copy':
             command.solver.print_success(content=f'Copying {selected_song["name"]}.')
             command.solver._copy_to_clipboard(
-                content=f'>>> **"{selected_song['name']}"** (by {selected_song['artist']})!\n'
+                content=f'**"{selected_song['name']}"** (by {selected_song['artist']})!\n'
                         f'-# https://open.spotify.com/track/{selected_song["id"]}'
             )
             break
