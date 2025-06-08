@@ -171,7 +171,7 @@ def callback(command: Command, s: str):
     )
 
     command.solver._copy_to_clipboard(
-        content=f'>>> **"{selected_song['name']}"** (by {selected_song['artist']})\n'
+        content=f'**"{selected_song['name']}"** (by {selected_song['artist']})\n'
                 f'-# https://open.spotify.com/track/{selected_song["id"]}'
     )
     last_input = None
